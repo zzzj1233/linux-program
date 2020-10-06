@@ -1,6 +1,6 @@
+#include <zconf.h>
 #include "signal.h"
 #include "stdio.h"
-
 /**
  * 1. 未决信号集,当进程接受到信号时,内核会填充该进程[未决信号集]对应的[信号标识]
  * 2. 如果阻塞信号集对应的标识没有值,则继续走下面的流程 -> SIG_ERR : return error | SIG_DFL : default action | SIG_IGN : ignore | customer function point
@@ -59,6 +59,35 @@ int main() {
     // 2. 清空
     sigemptyset(&sigset);
 
+    // 3. 阻塞 ctrl + c 信号
+    sigaddset(&sigset, SIGINT);
+    // 阻塞 ctrl + z
+    sigaddset(&sigset, SIGTSTP);
+
+    // 4. 填充到阻塞信号集
+    sigprocmask(SIG_BLOCK, &sigset, NULL);
+
+    // 5. 创建结构体用于获取未决信号集
+    sigset_t pend;
+
+    for (int i = 0; i < 50; ++i) {
+        // 5.1 清空
+        sigemptyset(&pend);
+
+        // 5.2 获取
+        sigpending(&pend);
+
+        // 5.3 查看未决信号集前10个信号的状态
+        for (int j = 1; j < 11; ++j) {
+            if (sigismember(&pend, j)) {
+                printf("1");
+            } else {
+                printf("0");
+            }
+        }
+        printf("\n");
+        sleep(1);
+    }
 
 }
 
